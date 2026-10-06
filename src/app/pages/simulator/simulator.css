@@ -1,0 +1,9 @@
+/* Estilos específicos do Simulador */
+.diff-badge-positive {
+  color: #059669;
+  background-color: #ecfdf5;
+}
+.diff-badge-negative {
+  color: #dc2626;
+  background-color: #fef2f2;
+}

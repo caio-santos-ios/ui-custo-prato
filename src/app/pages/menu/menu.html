@@ -1,0 +1,172 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+        <i class="fa-solid fa-book-open text-orange-600"></i>
+        Meu Cardápio
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Visualize a rentabilidade dos seus pratos e compartilhe o link do cardápio digital com seus clientes para receber pedidos no WhatsApp.
+      </p>
+    </div>
+    <button (click)="goToRecipes()"
+      class="inline-flex items-center justify-center px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">
+      <i class="fa-solid fa-plus mr-2"></i>
+      Gerenciar Fichas Técnicas
+    </button>
+  </div>
+
+  <!-- Shareable Public Link Card -->
+  <div class="p-6 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 dark:from-orange-950/30 dark:via-amber-950/20 dark:to-transparent rounded-3xl border border-orange-200/60 dark:border-orange-800/40 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="flex items-center gap-4 w-full md:w-auto">
+      <div class="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center text-2xl flex-shrink-0 shadow-lg shadow-orange-500/30">
+        <i class="fa-solid fa-share-nodes"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Link do seu Cardápio Digital</h3>
+          <span *ngIf="store?.menuEnabled" class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-full">
+            Online Ativo
+          </span>
+          <span *ngIf="!store?.menuEnabled" class="px-2 py-0.5 text-[10px] font-bold bg-gray-200 text-gray-700 rounded-full">
+            Pausado
+          </span>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-md mt-0.5 font-mono">
+          {{ publicMenuUrl || 'Configure o link da loja nas configurações...' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+      <button (click)="copyLink()"
+        class="flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-xs font-semibold rounded-xl shadow-sm transition-all gap-1.5">
+        <i class="fa-regular fa-copy"></i>
+        <span>Copiar Link</span>
+      </button>
+
+      <button (click)="openPublicMenu()"
+        class="flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white text-xs font-semibold rounded-xl shadow-sm transition-all gap-1.5">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        <span>Visualizar</span>
+      </button>
+
+      <button (click)="shareOnWhatsapp()"
+        class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all gap-1.5">
+        <i class="fa-brands fa-whatsapp text-sm"></i>
+        <span>Enviar no WhatsApp</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-4 items-center justify-between">
+    <div class="relative flex-1 w-full">
+      <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+      <input type="text" [(ngModel)]="search"
+        placeholder="Filtrar prato no cardápio..."
+        class="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none">
+    </div>
+    <div class="sm:w-56 w-full">
+      <select [(ngModel)]="categoryFilter"
+        class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+        <option value="all">Todas categorias</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center py-12">
+    <app-loading></app-loading>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredItems.length === 0"
+    class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div class="w-16 h-16 mx-auto mb-4 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-2xl flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-utensils"></i>
+    </div>
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Nenhum prato disponível</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+      Cadastre receitas e defina o preço de venda para vê-las listadas no seu cardápio com todos os indicadores de custo e margem.
+    </p>
+    <button (click)="goToRecipes()"
+      class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition-all">
+      Criar Receita
+    </button>
+  </div>
+
+  <!-- Dishes Table -->
+  <div *ngIf="!isLoading && filteredItems.length > 0"
+    class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <th class="py-3.5 px-4">Prato</th>
+            <th class="py-3.5 px-4">Preço de Venda</th>
+            <th class="py-3.5 px-4">Custo / Porção</th>
+            <th class="py-3.5 px-4">Lucro Bruto</th>
+            <th class="py-3.5 px-4">Margem Real</th>
+            <th class="py-3.5 px-4 text-center">Exibir no Cardápio</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-xs">
+          <tr *ngFor="let item of filteredItems" class="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
+            
+            <!-- Dish info -->
+            <td class="py-3.5 px-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl overflow-hidden bg-orange-50 dark:bg-orange-950/30 flex-shrink-0 flex items-center justify-center border border-orange-100 dark:border-orange-900/30">
+                  <img *ngIf="item.photo" [src]="item.photo" class="w-full h-full object-cover">
+                  <i *ngIf="!item.photo" class="fa-solid fa-bowl-food text-orange-500 text-lg"></i>
+                </div>
+                <div>
+                  <span class="font-bold text-gray-900 dark:text-white block text-sm">{{ item.name }}</span>
+                  <span class="text-[11px] text-gray-400">{{ item.category || 'Sem categoria' }}</span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Sale Price -->
+            <td class="py-3.5 px-4 font-bold text-orange-600 dark:text-orange-400 text-sm">
+              R$ {{ item.salePrice | number:'1.2-2' }}
+            </td>
+
+            <!-- Cost per portion -->
+            <td class="py-3.5 px-4 font-semibold text-gray-700 dark:text-gray-300">
+              R$ {{ item.costPerPortion | number:'1.2-2' }}
+            </td>
+
+            <!-- Gross profit -->
+            <td class="py-3.5 px-4 font-bold" [ngClass]="item.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+              R$ {{ item.grossProfit | number:'1.2-2' }}
+            </td>
+
+            <!-- Margin -->
+            <td class="py-3.5 px-4">
+              <span class="px-2.5 py-1 rounded-lg text-xs font-bold inline-block"
+                [ngClass]="item.margin >= 30 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : (item.margin > 0 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' : 'bg-red-50 text-red-700')">
+                {{ item.margin | number:'1.1-1' }}%
+              </span>
+            </td>
+
+            <!-- Toggle Menu Visibility -->
+            <td class="py-3.5 px-4 text-center">
+              <button (click)="toggleVisibility(item)"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                [ngClass]="item.showInMenu ? 'bg-orange-600' : 'bg-gray-300 dark:bg-gray-600'">
+                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  [ngClass]="item.showInMenu ? 'translate-x-5' : 'translate-x-0'">
+                </span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

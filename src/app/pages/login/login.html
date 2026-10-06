@@ -1,0 +1,142 @@
+<div class="min-h-screen flex bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 transition-colors relative">
+
+  <button type="button" (click)="themeService.toggleTheme()"
+    class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-sm transition hover:scale-105 cursor-pointer"
+    [title]="themeService.isDark() ? 'Mudar para modo claro' : 'Mudar para modo escuro'">
+    <i class="fa-solid" [ngClass]="themeService.isDark() ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'"></i>
+  </button>
+
+  <div class="hidden lg:flex w-[460px] shrink-0 relative overflow-hidden items-center bg-gradient-to-br from-slate-900 via-stone-900 to-slate-950 p-12">
+    <div class="relative z-10 flex flex-col gap-8 w-full">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-orange-500/30">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black text-white leading-tight">Custo<span class="text-orange-500">Prato</span></h2>
+          <p class="text-xs text-slate-400 font-medium">Calculadora de custo real, margem e cardápio</p>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-3xl font-black text-white leading-tight mb-3">Conheça o lucro real de cada prato</h3>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          Descubra o custo exato com conversão automática de unidades, fator de correção e simulação de cenários em tempo real.
+        </p>
+      </div>
+
+      <ul class="flex flex-col gap-3.5">
+        <li class="flex items-center gap-3 text-sm text-slate-200">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <i class="fa-solid fa-check"></i>
+          </span>
+          Conversão kg ↔ g e L ↔ ml automática
+        </li>
+        <li class="flex items-center gap-3 text-sm text-slate-200">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <i class="fa-solid fa-check"></i>
+          </span>
+          Fator de correção e perdas na limpeza
+        </li>
+        <li class="flex items-center gap-3 text-sm text-slate-200">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <i class="fa-solid fa-check"></i>
+          </span>
+          Raio-X do Prato: o que mais pesa no custo
+        </li>
+        <li class="flex items-center gap-3 text-sm text-slate-200">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <i class="fa-solid fa-check"></i>
+          </span>
+          Simulador sandbox e metas de vendas
+        </li>
+        <li class="flex items-center gap-3 text-sm text-slate-200">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <i class="fa-solid fa-check"></i>
+          </span>
+          Cardápio digital com pedidos via WhatsApp
+        </li>
+      </ul>
+
+      <div class="flex items-center gap-2 text-xs text-slate-400 pt-4 border-t border-white/10">
+        <i class="fa-solid fa-shield-halved text-orange-400"></i>
+        <span>Dados isolados por usuário e 100% seguros</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 flex items-center justify-center px-5 py-8 md:px-8 md:py-12 bg-slate-50 dark:bg-[#080d1a] transition-colors">
+    <div class="w-full max-w-[440px]">
+
+      <div class="lg:hidden flex items-center justify-center gap-2.5 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-lg">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <span class="text-2xl font-black text-slate-900 dark:text-white">Custo<span class="text-orange-500">Prato</span></span>
+      </div>
+
+      <div class="mb-6">
+        <h1 class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-1">Acessar Conta</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Informe suas credenciais para entrar no sistema</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-[0.4px]">
+            E-mail <span class="text-red-500">*</span>
+          </label>
+          <input formControlName="email" type="email" autocomplete="email"
+            class="w-full bg-white dark:bg-[#0b1120] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-orange-500 shadow-sm"
+            [ngClass]="err('email') ? 'border-red-400 focus:border-red-400' : ''"
+            placeholder="seu@restaurante.com.br" />
+          <span class="text-[11px] text-red-500" *ngIf="err('email')">{{ err('email') }}</span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-[11.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-[0.4px]">
+              Senha <span class="text-red-500">*</span>
+            </label>
+            <a routerLink="/forgot-password"
+              class="text-xs font-semibold no-underline hover:underline text-orange-600 dark:text-orange-400">
+              Esqueceu a senha?
+            </a>
+          </div>
+          <div class="relative flex items-center">
+            <input formControlName="password" [type]="showPassword ? 'text' : 'password'" autocomplete="current-password"
+              class="w-full bg-white dark:bg-[#0b1120] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition focus:border-orange-500 shadow-sm"
+              [ngClass]="err('password') ? 'border-red-400 focus:border-red-400' : ''"
+              placeholder="Digite sua senha" />
+            <button type="button" (click)="toggleShowPassword()"
+              class="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition bg-transparent border-none cursor-pointer flex items-center justify-center p-1">
+              <i class="fa-solid text-sm" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
+          <span class="text-[11px] text-red-500" *ngIf="err('password')">{{ err('password') }}</span>
+        </div>
+
+        <div class="mt-2">
+          <button type="submit" [disabled]="isLoading"
+            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold text-white cursor-pointer transition hover:-translate-y-px hover:shadow-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-55 disabled:cursor-not-allowed disabled:transform-none">
+            <i class="fa-solid fa-spinner fa-spin" *ngIf="isLoading"></i>
+            <i class="fa-solid fa-right-to-bracket" *ngIf="!isLoading"></i>
+            <span>{{ isLoading ? 'Entrando...' : 'Entrar no CustoPrato' }}</span>
+          </button>
+        </div>
+
+      </form>
+
+      <div class="flex flex-col items-center gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <p class="text-center text-[13px] text-slate-500 dark:text-slate-400">
+          Ainda não tem conta?
+          <a routerLink="/register" class="font-bold no-underline hover:underline text-orange-600 dark:text-orange-400">
+            Criar conta grátis
+          </a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+</div>

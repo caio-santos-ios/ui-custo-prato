@@ -1,0 +1,39 @@
+<aside class="sidebar">
+  <div class="sidebar-header" style="display: flex; justify-content: center; align-items: center; padding: 20px 10px;">
+    <div class="flex items-center gap-2 cursor-pointer" routerLink="/dashboard">
+      <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-lg shadow-sm">
+        <i class="fa-solid fa-utensils text-sm"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-base font-black text-slate-900 dark:text-white leading-tight">Custo<span class="text-orange-500">Prato</span></span>
+        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Gestão e Margem</span>
+      </div>
+    </div>
+  </div>
+  
+  <nav class="sidebar-nav">
+    <a *ngFor="let item of menu; index as i" routerLink="{{item.link}}" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-{{item.icon}} nav-icon"></i>
+      <span>{{item.description}}</span>
+    </a>
+    
+    <button (click)="themeService.toggleTheme()" class="nav-item" style="background: none; border: none; width: 100%; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; color: var(--text-sidebar-muted);">
+      <i class="fa-solid nav-icon" [ngClass]="themeService.isDark() ? 'fa-sun' : 'fa-moon'" style="font-size: 14px; width: 16px; text-align: center;"></i>
+      <span>{{ themeService.isDark() ? 'Modo Claro' : 'Modo Escuro' }}</span>
+    </button>
+
+    <div class="user-profile-bar" (click)="goToProfile()" title="Editar Perfil">
+      <div class="user-avatar-circle">
+        <img *ngIf="user?.photo" [src]="user?.photo" alt="Avatar" />
+        <span *ngIf="!user?.photo">{{ (user?.name || 'U')[0].toUpperCase() }}</span>
+      </div>
+      <div class="user-profile-info">
+        <span class="user-profile-name">{{ user?.name || 'Restaurante' }}</span>
+        <span class="user-profile-role">{{ user?.storeName || 'Meu Estabelecimento' }}</span>
+      </div>
+      <button class="btn-logout-mini" (click)="logout($event)" title="Sair do painel">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+</aside>

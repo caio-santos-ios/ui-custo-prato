@@ -1,0 +1,30 @@
+<div class="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" *ngIf="modal">
+  <div
+    class="w-full max-w-md bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 text-center space-y-4">
+    <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto text-xl">
+      <i class="fa-solid fa-table-columns"></i>
+    </div>
+    <div class="grid grid-cols-3 gap-3 items-end justify-between">
+      <div class="col-span-2">
+        <label
+          class="text-start block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Nome
+          <span class="text-red-500">*</span>
+        </label>
+        <input formControlName="name" type="text" placeholder="NOME"
+          class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-orange-500 shadow-sm" />
+      </div>
+      <div class="col-span-1">
+        <button type="button" (click)="create()" [disabled]="isLoading"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 transition shadow-sm">
+          {{ isLoading ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 pt-2">
+      <button type="button" (click)="closeDeleteModal()" [disabled]="isLoading"
+      class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300">
+      Cancelar
+      </button>
+    </div>
+  </div>
+</div>

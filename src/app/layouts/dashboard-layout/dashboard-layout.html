@@ -1,0 +1,30 @@
+<div class="layout-container" [class.sidebar-open]="isSidebarOpen" [class.sidebar-closed]="!isSidebarOpen">
+  <header class="app-header">
+    <div class="header-left">
+      <button class="hamburger-btn" (click)="toggleSidebar()">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+      <div class="app-logo flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-sm shadow">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <span class="font-black text-gray-900 dark:text-white tracking-tight text-base hidden sm:inline">Custo<span class="text-orange-600">Prato</span></span>
+      </div>
+    </div>
+    
+    <div class="header-right" style="display: flex; align-items: center; gap: 12px;">
+      <button class="theme-toggle-btn" (click)="themeService.toggleTheme()" [title]="themeService.isDark() ? 'Mudar para modo claro' : 'Mudar para modo escuro'">
+        <i class="fa-solid" [ngClass]="themeService.isDark() ? 'fa-sun' : 'fa-moon'"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+  <app-sidebar [class.open]="isSidebarOpen" (click)="closeOnMobile()"></app-sidebar>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

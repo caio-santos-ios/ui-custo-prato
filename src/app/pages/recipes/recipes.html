@@ -1,0 +1,620 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Receitas & Fichas Técnicas</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Gerencie a composição dos seus pratos, calcule o custo real por porção e descubra sua margem de lucro exata.
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <button (click)="openCreateModal()"
+        class="inline-flex items-center justify-center px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">
+        <i class="fa-solid fa-plus mr-2"></i>
+        Nova Receita
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-center justify-between">
+    <div class="flex-1 w-full flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+        <input type="text" [(ngModel)]="search" (keyup.enter)="onSearch()"
+          placeholder="Buscar receita pelo nome..."
+          class="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none">
+      </div>
+      <div class="sm:w-48">
+        <select [(ngModel)]="categoryFilter" (change)="onSearch()"
+          class="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+          <option value="all">Todas categorias</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+    </div>
+    <button (click)="onSearch()"
+      class="w-full md:w-auto px-5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl transition-colors">
+      Filtrar
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center py-12">
+    <app-loading></app-loading>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && (!data.items || data.items.length === 0)"
+    class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div class="w-16 h-16 mx-auto mb-4 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded-2xl flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-utensils"></i>
+    </div>
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Nenhuma receita encontrada</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+      Cadastre os pratos do seu cardápio, informe os ingredientes e custos para calcular seu lucro e margem real.
+    </p>
+    <button (click)="openCreateModal()"
+      class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl transition-all">
+      Criar Primeira Receita
+    </button>
+  </div>
+
+  <!-- Recipe Cards Grid -->
+  <div *ngIf="!isLoading && data.items && data.items.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div *ngFor="let recipe of data.items"
+      class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm recipe-card flex flex-col justify-between">
+      
+      <!-- Top: Image / Icon + Title + Status -->
+      <div>
+        <div class="flex items-start gap-3.5 mb-3">
+          <div class="w-14 h-14 rounded-xl overflow-hidden bg-orange-50 dark:bg-orange-950/30 flex-shrink-0 flex items-center justify-center border border-orange-100 dark:border-orange-900/30">
+            <img *ngIf="recipe.photo" [src]="recipe.photo" alt="{{ recipe.name }}" class="w-full h-full object-cover">
+            <i *ngIf="!recipe.photo" class="fa-solid fa-bowl-food text-orange-500 text-2xl"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <h3 class="font-bold text-gray-900 dark:text-white truncate text-base" [title]="recipe.name">{{ recipe.name }}</h3>
+              <!-- Menu Badge -->
+              <span *ngIf="recipe.showInMenu" class="flex-shrink-0 px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 rounded-md border border-emerald-200 dark:border-emerald-800" title="Exibido no cardápio público">
+                <i class="fa-solid fa-globe mr-1"></i>Cardápio
+              </span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ recipe.category || 'Sem categoria' }} • {{ recipe.portions }} porção(ões)</p>
+          </div>
+        </div>
+
+        <!-- Warning Badge if below target margin -->
+        <div *ngIf="recipe.belowTarget" class="mb-3 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center text-xs text-amber-700 dark:text-amber-400">
+          <i class="fa-solid fa-triangle-exclamation mr-2 flex-shrink-0"></i>
+          <span>Margem ({{ recipe.margin | number:'1.1-1' }}%) abaixo da meta ({{ recipe.targetMargin }}%). Sugerido: R$ {{ recipe.suggestedPrice | number:'1.2-2' }}</span>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 gap-2.5 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl mb-4 text-xs">
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Custo p/ porção</span>
+            <span class="font-bold text-gray-900 dark:text-white text-sm">R$ {{ recipe.costPerPortion | number:'1.2-2' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Preço de venda</span>
+            <span class="font-bold text-orange-600 dark:text-orange-400 text-sm">R$ {{ recipe.salePrice | number:'1.2-2' }}</span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Lucro Bruto</span>
+            <span class="font-semibold text-gray-900 dark:text-white" [ngClass]="{'text-emerald-600 dark:text-emerald-400': recipe.grossProfit > 0, 'text-red-500': recipe.grossProfit < 0}">
+              R$ {{ recipe.grossProfit | number:'1.2-2' }}
+            </span>
+          </div>
+          <div>
+            <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Margem real</span>
+            <span class="font-bold" [ngClass]="{'text-emerald-600 dark:text-emerald-400': recipe.margin >= recipe.targetMargin, 'text-amber-600 dark:text-amber-400': recipe.margin < recipe.targetMargin && recipe.margin > 0, 'text-red-500': recipe.margin <= 0}">
+              {{ recipe.margin | number:'1.1-1' }}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between gap-1">
+        <button (click)="simulateRecipe(recipe)"
+          title="Abrir no Simulador (E se eu mudar isso?)"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-lg transition-colors">
+          <i class="fa-solid fa-calculator"></i>
+          <span>Simular</span>
+        </button>
+
+        <div class="flex items-center gap-1">
+          <button (click)="toggleMenuVisibility(recipe)"
+            [title]="recipe.showInMenu ? 'Ocultar do Cardápio' : 'Exibir no Cardápio'"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <i class="fa-solid" [ngClass]="recipe.showInMenu ? 'fa-eye text-emerald-600' : 'fa-eye-slash'"></i>
+          </button>
+          <button (click)="duplicateRecipe(recipe)" title="Duplicar receita"
+            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <i class="fa-solid fa-copy"></i>
+          </button>
+          <button (click)="openEditModal(recipe)" title="Editar ficha técnica"
+            class="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-lg transition-colors">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button (click)="openDeleteModal(recipe)" title="Excluir"
+            class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!isLoading && data.totalPages > 1" class="flex items-center justify-between py-4">
+    <p class="text-xs text-gray-500 dark:text-gray-400">
+      Mostrando página {{ data.pageNumber }} de {{ data.totalPages }} (Total: {{ data.totalItems }} receitas)
+    </p>
+    <div class="flex items-center gap-1">
+      <button [disabled]="(data.pageNumber || 1) <= 1" (click)="loadData((data.pageNumber || 1) - 1)"
+        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+        Anterior
+      </button>
+      <button *ngFor="let p of visiblePages" (click)="loadData(p)"
+        [ngClass]="p === data.pageNumber ? 'bg-orange-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'"
+        class="w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-lg">
+        {{ p }}
+      </button>
+      <button [disabled]="(data.pageNumber || 1) >= data.totalPages" (click)="loadData((data.pageNumber || 1) + 1)"
+        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+        Próxima
+      </button>
+    </div>
+  </div>
+
+  <!-- Recipe Editor Modal -->
+  <div *ngIf="modal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between flex-shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+            <i class="fa-solid fa-receipt text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+              {{ form.get('id')?.value ? 'Editar Ficha Técnica' : 'Nova Receita / Ficha Técnica' }}
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              O custo dos ingredientes atualiza dinamicamente conforme os preços de compra.
+            </p>
+          </div>
+        </div>
+        <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Live KPI Summary Strip -->
+      <div class="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-emerald-500/10 dark:from-orange-950/20 dark:via-amber-950/20 dark:to-emerald-950/20 px-6 py-3 border-b border-gray-100 dark:border-gray-700 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 block">Custo p/ Porção</span>
+          <span class="font-bold text-gray-900 dark:text-white text-sm">R$ {{ costPerPortion | number:'1.2-2' }}</span>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 block">Preço de Venda</span>
+          <span class="font-bold text-orange-600 dark:text-orange-400 text-sm">R$ {{ salePrice | number:'1.2-2' }}</span>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 block">Lucro p/ Porção</span>
+          <span class="font-bold text-sm" [ngClass]="grossProfitPerPortion >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+            R$ {{ grossProfitPerPortion | number:'1.2-2' }}
+          </span>
+        </div>
+        <div>
+          <span class="text-gray-500 dark:text-gray-400 block">Margem Real</span>
+          <span class="font-bold text-sm" [ngClass]="marginPercent >= storeTargetMargin ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'">
+            {{ marginPercent | number:'1.1-1' }}%
+            <span class="text-[10px] text-gray-400 font-normal">(Meta: {{ storeTargetMargin }}%)</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="px-6 border-b border-gray-200 dark:border-gray-700 flex gap-4 overflow-x-auto text-sm font-semibold text-gray-500 dark:text-gray-400 flex-shrink-0">
+        <button type="button" (click)="activeTab = 'basic'"
+          [ngClass]="activeTab === 'basic' ? 'border-orange-500 text-orange-600 dark:text-orange-400 border-b-2' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+          class="py-3 px-1 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-circle-info mr-1.5"></i>Dados Básicos
+        </button>
+        <button type="button" (click)="activeTab = 'ingredients'"
+          [ngClass]="activeTab === 'ingredients' ? 'border-orange-500 text-orange-600 dark:text-orange-400 border-b-2' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+          class="py-3 px-1 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-carrot mr-1.5"></i>Ingredientes ({{ items.length }})
+        </button>
+        <button type="button" (click)="activeTab = 'costs'"
+          [ngClass]="activeTab === 'costs' ? 'border-orange-500 text-orange-600 dark:text-orange-400 border-b-2' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+          class="py-3 px-1 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-box-open mr-1.5"></i>Embalagem & Outros Custos
+        </button>
+        <button type="button" (click)="activeTab = 'pricing'"
+          [ngClass]="activeTab === 'pricing' ? 'border-orange-500 text-orange-600 dark:text-orange-400 border-b-2' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+          class="py-3 px-1 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-tag mr-1.5"></i>Preço, Taxas & Lucro
+        </button>
+        <button type="button" (click)="activeTab = 'radiox'"
+          [ngClass]="activeTab === 'radiox' ? 'border-orange-500 text-orange-600 dark:text-orange-400 border-b-2' : 'hover:text-gray-700 dark:hover:text-gray-300'"
+          class="py-3 px-1 transition-colors whitespace-nowrap">
+          <i class="fa-solid fa-pie-chart mr-1.5"></i>Raio-X do Prato
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <form [formGroup]="form" (ngSubmit)="save()" class="p-6 overflow-y-auto flex-1 space-y-5">
+        
+        <!-- TAB 1: BASIC INFO -->
+        <div *ngIf="activeTab === 'basic'" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Nome do Prato *</label>
+              <input type="text" formControlName="name" placeholder="Ex: Strogonoff de Frango Especial"
+                class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Categoria</label>
+              <input type="text" formControlName="category" placeholder="Ex: Pratos Executivos, Massas..."
+                class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Descrição (exibida no cardápio online)</label>
+            <textarea formControlName="description" rows="2" placeholder="Descreva os acompanhamentos, preparo e detalhes que encantam o cliente..."
+              class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                Número de Porções *
+                <span class="text-[11px] text-gray-400 font-normal block">Quantas porções a receita rende</span>
+              </label>
+              <input type="number" step="1" min="1" formControlName="portions"
+                class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                Rendimento Total (opcional)
+                <span class="text-[11px] text-gray-400 font-normal block">Ex: 2.5 kg preparados</span>
+              </label>
+              <input type="number" step="0.1" min="0" formControlName="yieldQuantity"
+                class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                Unidade do Rendimento
+                <span class="text-[11px] text-gray-400 font-normal block">kg, g, L, ml, un</span>
+              </label>
+              <select formControlName="yieldUnit"
+                class="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+                <option *ngFor="let u of yieldUnits" [value]="u">{{ u }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Photo Upload & Menu Visibility -->
+          <div class="pt-4 border-t border-gray-100 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Foto do Prato</label>
+              <div class="flex items-center gap-3">
+                <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center flex-shrink-0">
+                  <img *ngIf="photoPreview" [src]="photoPreview" class="w-full h-full object-cover">
+                  <i *ngIf="!photoPreview" class="fa-solid fa-camera text-gray-400 text-xl"></i>
+                </div>
+                <div>
+                  <input type="file" (change)="onFileSelected($event)" accept="image/*" class="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-gray-700 dark:file:text-gray-200 cursor-pointer">
+                  <p class="text-[11px] text-gray-400 mt-1">PNG, JPG até 5MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+              <input type="checkbox" id="showInMenuCheckbox" formControlName="showInMenu"
+                class="w-4 h-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500">
+              <label for="showInMenuCheckbox" class="text-xs text-gray-700 dark:text-gray-300 font-medium cursor-pointer">
+                Exibir este prato no Cardápio Digital Público
+                <span class="block text-[11px] text-gray-400 font-normal">Permite que seus clientes vejam o prato e peçam pelo WhatsApp.</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: INGREDIENTS LIST -->
+        <div *ngIf="activeTab === 'ingredients'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white">Ingredientes Utilizados</h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Informe a quantidade líquida utilizada. O sistema calcula o custo com base no rendimento e preço de compra de cada item.</p>
+            </div>
+            <button type="button" (click)="addItem()"
+              class="px-3.5 py-1.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/40 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-xl transition-colors">
+              <i class="fa-solid fa-plus mr-1"></i>Adicionar Ingrediente
+            </button>
+          </div>
+
+          <div *ngIf="items.length === 0" class="p-8 text-center bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-dashed border-gray-200 dark:border-gray-600">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Nenhum ingrediente adicionado à receita.</p>
+            <button type="button" (click)="addItem()" class="px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-semibold">
+              Adicionar Primeiro Ingrediente
+            </button>
+          </div>
+
+          <div *ngIf="items.length > 0" class="space-y-3">
+            <div *ngFor="let item of items.controls; let i = index" [formGroup]="$any(item)"
+              class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600 flex flex-col md:flex-row items-center gap-3">
+              
+              <!-- Ingredient Select -->
+              <div class="flex-1 w-full">
+                <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">Ingrediente</label>
+                <select formControlName="ingredientId" (change)="onIngredientSelected(i)"
+                  class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+                  <option *ngFor="let ing of availableIngredients" [value]="ing.id">
+                    {{ ing.name }} (Compra: R$ {{ ing.purchasePrice | number:'1.2-2' }}/{{ ing.purchaseQuantity }} {{ ing.purchaseUnit }} - Rend: {{ ing.yieldPercent }}%)
+                  </option>
+                </select>
+              </div>
+
+              <!-- Quantity Used -->
+              <div class="w-full md:w-32">
+                <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">Qtd Utilizada</label>
+                <input type="number" step="0.001" min="0.001" formControlName="quantity"
+                  class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+              </div>
+
+              <!-- Unit -->
+              <div class="w-full md:w-28">
+                <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">Unidade</label>
+                <select formControlName="unit"
+                  class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+                  <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+                </select>
+              </div>
+
+              <!-- Calculated Real Cost for this Item -->
+              <div class="w-full md:w-32 text-right">
+                <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1">Custo Total</label>
+                <span class="text-sm font-bold text-gray-900 dark:text-white">
+                  R$ {{ calculateItemCost(item) | number:'1.2-2' }}
+                </span>
+              </div>
+
+              <!-- Remove button -->
+              <div class="w-full md:w-auto flex justify-end">
+                <button type="button" (click)="removeItem(i)"
+                  class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors">
+                  <i class="fa-solid fa-trash text-sm"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Ingredients Cost Banner -->
+            <div class="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-xl flex items-center justify-between text-sm">
+              <span class="font-medium text-orange-900 dark:text-orange-300">Custo Total dos Ingredientes:</span>
+              <span class="font-bold text-orange-600 dark:text-orange-400 text-base">R$ {{ totalIngredientsCost | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PACKAGING & OTHER COSTS -->
+        <div *ngIf="activeTab === 'costs'" class="space-y-5">
+          <!-- Packaging -->
+          <div class="p-4 bg-gray-50 dark:bg-gray-700/40 rounded-2xl border border-gray-100 dark:border-gray-600">
+            <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Embalagem (p/ porção)</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Marmita térmica, sacola, talheres descartáveis, lacre de segurança.</p>
+            <div class="max-w-xs">
+              <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                formControlName="packagingCost"
+                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-semibold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+          </div>
+
+          <!-- Other Costs List -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white">Outros Custos Diretos</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Gás, energia, etiquetas, mão de obra proporcional.</p>
+              </div>
+              <button type="button" (click)="addOtherCost()"
+                class="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-xl">
+                <i class="fa-solid fa-plus mr-1"></i>Adicionar Custo
+              </button>
+            </div>
+
+            <div *ngIf="otherCosts.length === 0" class="text-center py-6 text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+              Nenhum custo adicional informado.
+            </div>
+
+            <div *ngIf="otherCosts.length > 0" class="space-y-3">
+              <div *ngFor="let cost of otherCosts.controls; let idx = index" [formGroup]="$any(cost)"
+                class="flex flex-col sm:flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600">
+                <div class="flex-1 w-full">
+                  <input type="text" formControlName="name" placeholder="Nome (Ex: Gás / Fritura)"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none">
+                </div>
+                <div class="w-full sm:w-36">
+                  <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                    formControlName="value"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none">
+                </div>
+                <div class="w-full sm:w-44">
+                  <select formControlName="appliesTo"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white outline-none">
+                    <option value="recipe">Na receita inteira</option>
+                    <option value="portion">Por porção</option>
+                  </select>
+                </div>
+                <button type="button" (click)="removeOtherCost(idx)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                  <i class="fa-solid fa-trash text-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PRICING, FEES & PROFIT -->
+        <div *ngIf="activeTab === 'pricing'" class="space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Sale Price Input -->
+            <div class="p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800/40 rounded-2xl">
+              <label class="block text-xs font-bold text-orange-900 dark:text-orange-300 mb-1">Preço de Venda do Prato *</label>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Valor cobrado do cliente final por porção</p>
+              <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                formControlName="salePrice"
+                class="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-700 rounded-xl text-lg font-bold text-orange-600 dark:text-orange-400 outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <!-- Target Margin Suggestion Card -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-600 rounded-2xl flex flex-col justify-between">
+              <div>
+                <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Sugestão p/ Margem Meta ({{ storeTargetMargin }}%)</span>
+                <div class="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                  R$ {{ suggestedPrice | number:'1.2-2' }}
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1">Calculado sobre o custo de R$ {{ costPerPortion | number:'1.2-2' }} / porção.</p>
+              </div>
+              <button type="button" (click)="applySuggestedPrice()"
+                class="mt-2 text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>Aplicar preço sugerido
+              </button>
+            </div>
+          </div>
+
+          <!-- Fees & Taxes -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white">Taxas de Venda (Cartão, Delivery, etc.)</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Descontadas do preço de venda para apurar a receita líquida e margem real.</p>
+              </div>
+              <button type="button" (click)="addFee()"
+                class="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-xl">
+                <i class="fa-solid fa-plus mr-1"></i>Adicionar Taxa
+              </button>
+            </div>
+
+            <div *ngIf="fees.length === 0" class="text-center py-6 text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+              Nenhuma taxa informada (sem desconto de comissão/cartão).
+            </div>
+
+            <div *ngIf="fees.length > 0" class="space-y-3">
+              <div *ngFor="let fee of fees.controls; let fIdx = index" [formGroup]="$any(fee)"
+                class="flex flex-col sm:flex-row items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600">
+                <div class="flex-1 w-full">
+                  <input type="text" formControlName="name" placeholder="Ex: Cartão Crédito ou App Delivery"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none">
+                </div>
+                <div class="w-full sm:w-36">
+                  <select formControlName="type"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-xs text-gray-900 dark:text-white outline-none">
+                    <option value="percent">% Percentual</option>
+                    <option value="fixed">R$ Fixo</option>
+                  </select>
+                </div>
+                <div class="w-full sm:w-32">
+                  <input type="number" step="0.1" min="0" formControlName="value"
+                    class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none">
+                </div>
+                <button type="button" (click)="removeFee(fIdx)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                  <i class="fa-solid fa-trash text-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: RAIO-X DO PRATO -->
+        <div *ngIf="activeTab === 'radiox'" class="space-y-5">
+          <div class="p-4 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-2xl">
+            <h4 class="text-sm font-bold text-blue-900 dark:text-blue-300 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+              Raio-X do Prato: O que mais pesa no seu bolso?
+            </h4>
+            <p class="text-xs text-gray-600 dark:text-gray-300">
+              Identifique rapidamente quais ingredientes representam a maior parte do custo da receita para negociar melhor com fornecedores ou ajustar as porções.
+            </p>
+          </div>
+
+          <div *ngIf="radioXData.length === 0" class="text-center py-8 text-xs text-gray-400">
+            Adicione ingredientes na aba "Ingredientes" para visualizar o Raio-X.
+          </div>
+
+          <div *ngIf="radioXData.length > 0" class="space-y-4">
+            <!-- Progress Bar Breakdown -->
+            <div class="h-6 w-full rounded-xl overflow-hidden flex bg-gray-100 dark:bg-gray-700 shadow-inner">
+              <div *ngFor="let seg of radioXData"
+                [style.width.%]="seg.percent"
+                [style.backgroundColor]="seg.color"
+                [title]="seg.name + ': ' + (seg.percent | number:'1.1-1') + '%'"
+                class="h-full transition-all duration-300">
+              </div>
+            </div>
+
+            <!-- Legend & Ranking List -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <div *ngFor="let item of radioXData; let rIdx = index"
+                class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600 flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-3.5 h-3.5 rounded-full flex-shrink-0" [style.backgroundColor]="item.color"></div>
+                  <div class="truncate">
+                    <span class="text-xs font-bold text-gray-900 dark:text-white truncate block">{{ item.name }}</span>
+                    <span class="text-[11px] text-gray-400">R$ {{ item.cost | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <span class="text-sm font-bold text-gray-900 dark:text-white">{{ item.percent | number:'1.1-1' }}%</span>
+                  <span class="text-[10px] text-gray-400 block">do custo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="pt-5 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3 flex-shrink-0">
+          <button type="button" (click)="closeModal()"
+            class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" [disabled]="isSaving"
+            class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center gap-2">
+            <i *ngIf="isSaving" class="fa-solid fa-circle-notch fa-spin"></i>
+            {{ form.get('id')?.value ? 'Salvar Alterações' : 'Cadastrar Receita' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div *ngIf="deleteModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 w-full max-w-md p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+      <div class="w-14 h-14 mx-auto mb-4 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center text-2xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Excluir Receita?</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        Tem certeza que deseja excluir a receita <strong>"{{ recipeToDelete?.name }}"</strong>? Esta ação não pode ser desfeita.
+      </p>
+      <div class="flex items-center justify-center gap-3">
+        <button (click)="closeDeleteModal()"
+          class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-xl transition-colors">
+          Cancelar
+        </button>
+        <button (click)="confirmDelete()" [disabled]="isDeleting"
+          class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center gap-2">
+          <i *ngIf="isDeleting" class="fa-solid fa-circle-notch fa-spin"></i>
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

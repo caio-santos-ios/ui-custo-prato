@@ -1,0 +1,153 @@
+<div class="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+        <i class="fa-solid fa-id-card text-clinic-primary"></i>
+        Meu Perfil
+      </h1>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Atualize seus dados pessoais, foto de identificação e senha de acesso.
+      </p>
+    </div>
+
+    <button type="button" (click)="goBack()"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer self-start sm:self-auto">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Voltar ao Início</span>
+    </button>
+  </div>
+
+  <div class="bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden p-6 space-y-6">
+    <div class="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+      <div class="relative group">
+        <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 shadow-md flex items-center justify-center text-3xl font-extrabold text-clinic-primary">
+          <img *ngIf="photoPreview" [src]="photoPreview" alt="Foto de perfil" class="w-full h-full object-cover" />
+          <span *ngIf="!photoPreview">{{ (currentUser?.name || 'U')[0].toUpperCase() }}</span>
+        </div>
+
+        <label for="photoUpload"
+          class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-clinic-primary text-black flex items-center justify-center shadow-lg hover:scale-110 transition cursor-pointer"
+          title="Alterar Foto">
+          <i class="fa-solid fa-camera text-xs" *ngIf="!isUploadingPhoto"></i>
+          <i class="fa-solid fa-spinner fa-spin text-xs" *ngIf="isUploadingPhoto"></i>
+        </label>
+        <input id="photoUpload" type="file" accept="image/*" (change)="onFileSelected($event)" class="hidden" />
+      </div>
+
+      <div class="flex-1 text-center sm:text-left space-y-2">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+            {{ currentUser?.name || 'Carregando...' }}
+          </h2>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold self-center sm:self-auto"
+            [ngClass]="isAdmin ? 'bg-clinic-primary/20 text-clinic-primary' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'">
+            {{ accessProfileLabel }}
+          </span>
+        </div>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          {{ currentUser?.email || '' }}
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+          <label for="photoUpload"
+            class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5">
+            <i class="fa-solid fa-upload text-[11px]"></i>
+            <span>Trocar Foto</span>
+          </label>
+
+          <button *ngIf="photoPreview" type="button" (click)="removePhoto()" [disabled]="isUploadingPhoto"
+            class="px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
+            <i class="fa-solid fa-trash-can text-[11px]"></i>
+            <span>Remover</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      <div class="space-y-4">
+        <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-user text-clinic-primary"></i>
+          Informações Pessoais
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Nome Completo <span class="text-red-500">*</span>
+            </label>
+            <input formControlName="name" type="text"
+              class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-clinic-primary shadow-sm"
+              [ngClass]="err('name') ? 'border-red-400 focus:border-red-400' : ''"
+              placeholder="Seu nome completo" />
+            <span class="text-[11px] text-red-500 mt-1 block" *ngIf="err('name')">{{ err('name') }}</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              E-mail de Acesso <span class="text-red-500">*</span>
+            </label>
+            <input formControlName="email" type="email"
+              class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-clinic-primary shadow-sm"
+              [ngClass]="err('email') ? 'border-red-400 focus:border-red-400' : ''"
+              placeholder="seu.email@exemplo.com" />
+            <span class="text-[11px] text-red-500 mt-1 block" *ngIf="err('email')">{{ err('email') }}</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Telefone / WhatsApp
+            </label>
+            <input formControlName="phone" type="text" mask="(00) 00000-0000"
+              class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-clinic-primary shadow-sm"
+              placeholder="(11) 99999-9999" />
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-lock text-clinic-primary"></i>
+          Segurança e Senha
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Nova Senha (Opcional)
+            </label>
+            <input formControlName="password" type="password"
+              class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-clinic-primary shadow-sm"
+              [ngClass]="err('password') ? 'border-red-400 focus:border-red-400' : ''"
+              placeholder="Deixe vazio para manter a atual" />
+            <span class="text-[11px] text-red-500 mt-1 block" *ngIf="err('password')">{{ err('password') }}</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Confirmar Nova Senha
+            </label>
+            <input formControlName="confirmPassword" type="password"
+              class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-clinic-primary shadow-sm"
+              placeholder="Repita a nova senha se preenchida" />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" (click)="goBack()"
+          class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+          Cancelar
+        </button>
+
+        <button type="submit" [disabled]="isSaving"
+          class="px-6 py-2.5 rounded-xl text-xs font-bold text-black bg-clinic-primary hover:opacity-95 disabled:opacity-50 flex items-center gap-2 cursor-pointer transition shadow-sm">
+          <i class="fa-solid fa-spinner fa-spin text-xs" *ngIf="isSaving"></i>
+          <i class="fa-solid fa-floppy-disk text-xs" *ngIf="!isSaving"></i>
+          <span>{{ isSaving ? 'Salvando...' : 'Salvar Alterações' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

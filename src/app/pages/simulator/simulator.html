@@ -1,0 +1,394 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+        <i class="fa-solid fa-calculator text-orange-600"></i>
+        Simulador — "E se eu mudar isso?"
+      </h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Simule mudanças de preço, substituição de ingredientes, perda/rendimento e veja o impacto instantâneo no lucro.
+      </p>
+    </div>
+
+    <!-- Recipe Select Dropdown -->
+    <div class="w-full sm:w-72">
+      <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Selecionar Receita Base:</label>
+      <select [(ngModel)]="selectedRecipeId" (ngModelChange)="onSelectRecipe($event)"
+        class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 shadow-sm">
+        <option value="">Selecione uma receita...</option>
+        <option *ngFor="let r of recipesList" [value]="r.id">{{ r.name }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Sandbox Protection Banner -->
+  <div class="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-2xl flex items-start gap-3 shadow-sm">
+    <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 text-sm">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="text-xs text-blue-900 dark:text-blue-200">
+      <strong class="font-bold block text-sm">Ambiente de Simulação Seguro (Sandbox)</strong>
+      Você está trabalhando em uma cópia separada. Nenhuma alteração feita aqui afetará a receita original no seu banco de dados. Sinta-se livre para testar qualquer cenário!
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex justify-center py-12">
+    <app-loading></app-loading>
+  </div>
+
+  <div *ngIf="!isLoading">
+    <!-- Comparison Scorecards (Original vs Simulado) -->
+    <div *ngIf="originalResult && simulatedResult" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+      <!-- Custo por Porção -->
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Custo p/ Porção</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full font-bold"
+            [ngClass]="getDiff('costPerPortion').isPositive ? 'diff-badge-positive' : 'diff-badge-negative'">
+            {{ getDiff('costPerPortion').text }} R$
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold text-gray-900 dark:text-white">R$ {{ simulatedResult.costPerPortion | number:'1.2-2' }}</span>
+          <span class="text-xs text-gray-400 line-through">R$ {{ originalResult.costPerPortion | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-[11px] text-gray-400 block mt-1">Custo total da porção</span>
+      </div>
+
+      <!-- Preço de Venda -->
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Preço de Venda</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full font-bold"
+            [ngClass]="getDiff('salePrice').isPositive ? 'diff-badge-positive' : 'diff-badge-negative'">
+            {{ getDiff('salePrice').text }} R$
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold text-orange-600 dark:text-orange-400">R$ {{ simulatedResult.salePrice | number:'1.2-2' }}</span>
+          <span class="text-xs text-gray-400 line-through">R$ {{ originalResult.salePrice | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-[11px] text-gray-400 block mt-1">Preço cobrado do cliente</span>
+      </div>
+
+      <!-- Lucro por Porção -->
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Lucro Bruto</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full font-bold"
+            [ngClass]="getDiff('grossProfit').isPositive ? 'diff-badge-positive' : 'diff-badge-negative'">
+            {{ getDiff('grossProfit').text }} R$
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold" [ngClass]="simulatedResult.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+            R$ {{ simulatedResult.grossProfit | number:'1.2-2' }}
+          </span>
+          <span class="text-xs text-gray-400 line-through">R$ {{ originalResult.grossProfit | number:'1.2-2' }}</span>
+        </div>
+        <span class="text-[11px] text-gray-400 block mt-1">Lucro livre por porção</span>
+      </div>
+
+      <!-- Margem Real -->
+      <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">Margem Real</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full font-bold"
+            [ngClass]="getDiff('margin').isPositive ? 'diff-badge-positive' : 'diff-badge-negative'">
+            {{ getDiff('margin').text }}%
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-bold" [ngClass]="simulatedResult.margin >= simulatedResult.targetMargin ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'">
+            {{ simulatedResult.margin | number:'1.1-1' }}%
+          </span>
+          <span class="text-xs text-gray-400 line-through">{{ originalResult.margin | number:'1.1-1' }}%</span>
+        </div>
+        <span class="text-[11px] text-gray-400 block mt-1">Meta: {{ simulatedResult.targetMargin }}%</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mb-6">
+      <div class="flex border-b border-gray-100 dark:border-gray-700 text-sm font-semibold">
+        <button (click)="activeTab = 'recipe'"
+          [ngClass]="activeTab === 'recipe' ? 'border-b-2 border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50/30 dark:bg-orange-950/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800'"
+          class="flex-1 py-3.5 px-4 text-center transition-colors">
+          <i class="fa-solid fa-sliders mr-2"></i>
+          1. Parâmetros da Simulação (Ingredientes & Preço)
+        </button>
+        <button (click)="activeTab = 'goals'"
+          [ngClass]="activeTab === 'goals' ? 'border-b-2 border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-50/30 dark:bg-orange-950/20' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800'"
+          class="flex-1 py-3.5 px-4 text-center transition-colors">
+          <i class="fa-solid fa-bullseye mr-2"></i>
+          2. Metas de Vendas & Cenários de Lucro (What-If)
+        </button>
+      </div>
+
+      <!-- TAB 1: SANDBOX PARAMS -->
+      <div *ngIf="activeTab === 'recipe'" class="p-6 space-y-6">
+        <form [formGroup]="form">
+          <!-- General Recipe Inputs -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/40 rounded-2xl border border-gray-100 dark:border-gray-600 mb-6">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Porções que Rende</label>
+              <input type="number" step="1" min="1" formControlName="portions" (change)="calculate()"
+                class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Custo Embalagem (p/ porção)</label>
+              <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                formControlName="packagingCost" (ngModelChange)="calculate()"
+                class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Preço de Venda Simulado</label>
+              <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                formControlName="salePrice" (ngModelChange)="calculate()"
+                class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-orange-300 dark:border-orange-600 rounded-lg text-sm font-bold text-orange-600 dark:text-orange-400 outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Margem Meta Alvo (%)</label>
+              <input type="number" step="1" min="1" max="99" formControlName="targetMargin" (change)="calculate()"
+                class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+          </div>
+
+          <!-- Ingredients Sandbox Table -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-sm font-bold text-gray-900 dark:text-white">Ingredientes na Simulação</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Teste o que acontece se o fornecedor aumentar o preço, se você trocar por outro produto ou se reduzir a quantidade.
+                </p>
+              </div>
+              <button type="button" (click)="addItem()"
+                class="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-xl">
+                <i class="fa-solid fa-plus mr-1"></i>Adicionar Item de Teste
+              </button>
+            </div>
+
+            <div class="space-y-3">
+              <div *ngFor="let item of items.controls; let idx = index" [formGroup]="$any(item)"
+                class="p-3.5 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600 flex flex-col lg:flex-row items-center gap-3 text-xs">
+                
+                <!-- Name -->
+                <div class="w-full lg:flex-1">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Nome do Ingrediente</label>
+                  <input type="text" formControlName="name" (change)="calculate()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-medium outline-none">
+                </div>
+
+                <!-- Purchase Price -->
+                <div class="w-full lg:w-32">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Preço Pago (R$)</label>
+                  <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                    formControlName="purchasePrice" (ngModelChange)="calculate()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-semibold text-gray-900 dark:text-white outline-none">
+                </div>
+
+                <!-- Purchase Quantity + Unit -->
+                <div class="w-full lg:w-28">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Qtd Comprada</label>
+                  <div class="flex items-center gap-1">
+                    <input type="number" step="0.1" min="0.001" formControlName="purchaseQuantity" (change)="calculate()"
+                      class="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white outline-none">
+                    <span class="text-gray-400 font-semibold">{{ item.get('purchaseUnit')?.value }}</span>
+                  </div>
+                </div>
+
+                <!-- Yield % (Fator de Correção) -->
+                <div class="w-full lg:w-28">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Rendimento (%)</label>
+                  <input type="number" step="1" min="1" max="100" formControlName="yieldPercent" (change)="calculate()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-semibold text-gray-900 dark:text-white outline-none">
+                </div>
+
+                <!-- Recipe Quantity Used -->
+                <div class="w-full lg:w-28">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Qtd na Receita</label>
+                  <input type="number" step="1" min="0.001" formControlName="quantity" (change)="calculate()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-semibold text-gray-900 dark:text-white outline-none">
+                </div>
+
+                <!-- Unit -->
+                <div class="w-full lg:w-20">
+                  <label class="block text-[10px] font-semibold text-gray-400 mb-1">Unidade</label>
+                  <select formControlName="unit" (change)="calculate()"
+                    class="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white outline-none">
+                    <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+                  </select>
+                </div>
+
+                <!-- Delete -->
+                <div class="w-full lg:w-auto flex justify-end">
+                  <button type="button" (click)="removeItem(idx)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- TAB 2: GOALS & WHAT-IF PROJECTIONS -->
+      <div *ngIf="activeTab === 'goals'" class="p-6 space-y-6">
+        <form [formGroup]="goalGroup" class="space-y-6">
+          
+          <!-- Metas Inputs -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent dark:from-orange-950/20 dark:via-amber-950/20 rounded-2xl border border-orange-200/50 dark:border-orange-800/30">
+            <div>
+              <label class="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
+                Vendas Médias por Dia
+                <span class="text-[10px] text-gray-400 font-normal block">Ex: 10 pratos/dia</span>
+              </label>
+              <input type="number" step="1" min="0" formControlName="dailySales" (change)="calculate()"
+                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
+                Dias de Funcionamento / Mês
+                <span class="text-[10px] text-gray-400 font-normal block">Ex: 26 dias (seg a sab)</span>
+              </label>
+              <input type="number" step="1" min="1" max="31" formControlName="daysPerMonth" (change)="calculate()"
+                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-800 dark:text-gray-200 mb-1">
+                Meta de Lucro Mensal Desejada
+                <span class="text-[10px] text-gray-400 font-normal block">Ex: R$ 5.000,00</span>
+              </label>
+              <input type="text" currencyMask [options]="{ prefix: 'R$ ', thousands: '.', decimal: ',', align: 'left' }"
+                formControlName="targetMonthlyProfit" (ngModelChange)="calculate()"
+                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-emerald-300 dark:border-emerald-600 rounded-xl text-sm font-bold text-emerald-600 dark:text-emerald-400 outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+          </div>
+
+          <!-- Goal Projections & Target Requirements -->
+          <div *ngIf="goalsResult?.simulated" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Estimativa Mensal Base -->
+            <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-3">
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-blue-500"></i>
+                Resultado Mensal Estimado
+              </h4>
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                  <span class="text-gray-400 block mb-0.5">Unidades no Mês</span>
+                  <span class="font-bold text-sm text-gray-900 dark:text-white">{{ goalsResult.simulated.monthlyUnitsSold }} un</span>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                  <span class="text-gray-400 block mb-0.5">Faturamento Estimado</span>
+                  <span class="font-bold text-sm text-orange-600 dark:text-orange-400">R$ {{ goalsResult.simulated.monthlyRevenue | number:'1.2-2' }}</span>
+                </div>
+                <div class="p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                  <span class="text-gray-400 block mb-0.5">Custo Total Mensal</span>
+                  <span class="font-bold text-sm text-gray-700 dark:text-gray-300">R$ {{ goalsResult.simulated.monthlyCost | number:'1.2-2' }}</span>
+                </div>
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
+                  <span class="text-emerald-700 dark:text-emerald-300 block mb-0.5 font-semibold">Lucro Líquido Estimado</span>
+                  <span class="font-bold text-sm text-emerald-600 dark:text-emerald-400">R$ {{ goalsResult.simulated.monthlyProfit | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Para Atingir a Meta -->
+            <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-3">
+              <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-flag-checkered text-orange-500"></i>
+                Para Atingir a Meta (R$ {{ goalGroup.get('targetMonthlyProfit')?.value | number:'1.2-2' }})
+              </h4>
+              <div class="p-4 bg-orange-50/60 dark:bg-orange-950/20 rounded-xl border border-orange-200 dark:border-orange-800/40 space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-gray-600 dark:text-gray-300 font-medium">Unidades necessárias no mês:</span>
+                  <span class="text-base font-bold text-orange-600 dark:text-orange-400">
+                    {{ goalsResult.simulated.targetUnitsNeededMonth }} unidades
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-gray-600 dark:text-gray-300 font-medium">Média diária necessária:</span>
+                  <span class="text-base font-bold text-orange-600 dark:text-orange-400">
+                    {{ goalsResult.simulated.targetUnitsNeededDay | number:'1.1-1' }} un/dia
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-xs pt-1 border-t border-orange-200/60 dark:border-orange-800/40">
+                  <span class="text-gray-500 dark:text-gray-400">Lucro livre por prato:</span>
+                  <span class="font-bold text-emerald-600 dark:text-emerald-400">
+                    R$ {{ goalsResult.simulated.profitPerUnit | number:'1.2-2' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- What-If Scenarios Section -->
+          <div class="p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-wand-magic-sparkles text-purple-500"></i>
+                  Cenários Interativos: E se eu alterar...
+                </h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Arraste os controles para ver o impacto no resultado mensal</p>
+              </div>
+              <button type="button" (click)="resetGoalSliders()" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                Restaurar 0%
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+              <!-- Slider 1: Preço -->
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-semibold text-gray-700 dark:text-gray-300">Preço de Venda</span>
+                  <span class="font-bold" [ngClass]="goalGroup.get('salePriceVariation')?.value >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ goalGroup.get('salePriceVariation')?.value > 0 ? '+' : '' }}{{ goalGroup.get('salePriceVariation')?.value }}%
+                  </span>
+                </div>
+                <input type="range" min="-30" max="50" step="5" formControlName="salePriceVariation" (input)="calculate()"
+                  class="w-full accent-orange-600 cursor-pointer">
+              </div>
+
+              <!-- Slider 2: Volume -->
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-semibold text-gray-700 dark:text-gray-300">Volume de Vendas</span>
+                  <span class="font-bold" [ngClass]="goalGroup.get('volumeVariation')?.value >= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ goalGroup.get('volumeVariation')?.value > 0 ? '+' : '' }}{{ goalGroup.get('volumeVariation')?.value }}%
+                  </span>
+                </div>
+                <input type="range" min="-50" max="100" step="5" formControlName="volumeVariation" (input)="calculate()"
+                  class="w-full accent-orange-600 cursor-pointer">
+              </div>
+
+              <!-- Slider 3: Custo Ingredientes -->
+              <div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-semibold text-gray-700 dark:text-gray-300">Custo dos Ingredientes</span>
+                  <span class="font-bold" [ngClass]="goalGroup.get('ingredientCostVariation')?.value <= 0 ? 'text-emerald-600' : 'text-red-500'">
+                    {{ goalGroup.get('ingredientCostVariation')?.value > 0 ? '+' : '' }}{{ goalGroup.get('ingredientCostVariation')?.value }}%
+                  </span>
+                </div>
+                <input type="range" min="-30" max="50" step="5" formControlName="ingredientCostVariation" (input)="calculate()"
+                  class="w-full accent-orange-600 cursor-pointer">
+              </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <p class="text-[11px] text-gray-400 italic pt-2 border-t border-gray-100 dark:border-gray-700">
+              * Nota: Os cálculos acima representam simulações matemáticas baseadas nos dados fornecidos e não constituem garantia de vendas ou faturamento.
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

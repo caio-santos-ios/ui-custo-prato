@@ -1,0 +1,104 @@
+<div class="min-h-screen flex items-center justify-center px-4 py-10 bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 transition-colors relative">
+
+  <button type="button" (click)="themeService.toggleTheme()"
+    class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-slate-200 dark:border-slate-700 shadow-sm transition hover:scale-105 cursor-pointer"
+    [title]="themeService.isDark() ? 'Mudar para modo claro' : 'Mudar para modo escuro'">
+    <i class="fa-solid" [ngClass]="themeService.isDark() ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'"></i>
+  </button>
+
+  <div class="w-full max-w-[480px] bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-6 sm:p-8">
+    <div class="flex items-center justify-center gap-2.5 mb-6">
+      <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-lg">
+        <i class="fa-solid fa-utensils"></i>
+      </div>
+      <span class="text-2xl font-black text-slate-900 dark:text-white">Custo<span class="text-orange-500">Prato</span></span>
+    </div>
+
+    <div class="mb-6 text-center">
+      <h1 class="text-xl font-black text-slate-900 dark:text-slate-100 mb-1">Cadastrar Estabelecimento</h1>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Comece a calcular os custos reais dos seus pratos hoje mesmo</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-3.5">
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          Seu Nome Completo <span class="text-red-500">*</span>
+        </label>
+        <input formControlName="name" type="text"
+          class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-orange-500 shadow-sm"
+          [ngClass]="err('name') ? 'border-red-400' : ''"
+          placeholder="Ex: Carlos Silva" />
+        <span class="text-[10px] text-red-500" *ngIf="err('name')">{{ err('name') }}</span>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          Nome do Estabelecimento / Cozinha <span class="text-red-500">*</span>
+        </label>
+        <input formControlName="storeName" type="text"
+          class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-orange-500 shadow-sm"
+          [ngClass]="err('storeName') ? 'border-red-400' : ''"
+          placeholder="Ex: Hamburgueria Artesanal, Marmitaria da Vovó..." />
+        <span class="text-[10px] text-red-500" *ngIf="err('storeName')">{{ err('storeName') }}</span>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          E-mail de Acesso <span class="text-red-500">*</span>
+        </label>
+        <input formControlName="email" type="email"
+          class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-orange-500 shadow-sm"
+          [ngClass]="err('email') ? 'border-red-400' : ''"
+          placeholder="seu@restaurante.com.br" />
+        <span class="text-[10px] text-red-500" *ngIf="err('email')">{{ err('email') }}</span>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          WhatsApp de Atendimento
+        </label>
+        <input formControlName="phone" type="tel"
+          class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 px-3.5 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-orange-500 shadow-sm"
+          placeholder="(11) 99999-9999" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+          Senha (mínimo 8 caracteres) <span class="text-red-500">*</span>
+        </label>
+        <div class="relative flex items-center">
+          <input formControlName="password" [type]="showPassword ? 'text' : 'password'"
+            class="w-full bg-white dark:bg-[#080d1a] border border-slate-300 dark:border-slate-700 rounded-lg py-2.5 pl-3.5 pr-10 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none transition focus:border-orange-500 shadow-sm"
+            [ngClass]="err('password') ? 'border-red-400' : ''"
+            placeholder="Crie uma senha segura" />
+          <button type="button" (click)="toggleShowPassword()"
+            class="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition bg-transparent border-none cursor-pointer flex items-center justify-center p-1">
+            <i class="fa-solid text-xs" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
+        <span class="text-[10px] text-red-500" *ngIf="err('password')">{{ err('password') }}</span>
+      </div>
+
+      <div class="mt-3">
+        <button type="submit" [disabled]="isLoading"
+          class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-xs font-bold text-white cursor-pointer transition hover:-translate-y-px hover:shadow-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-55 disabled:cursor-not-allowed">
+          <i class="fa-solid fa-spinner fa-spin" *ngIf="isLoading"></i>
+          <i class="fa-solid fa-user-plus" *ngIf="!isLoading"></i>
+          <span>{{ isLoading ? 'Cadastrando...' : 'Cadastrar e Começar' }}</span>
+        </button>
+      </div>
+
+    </form>
+
+    <div class="flex flex-col items-center gap-3 mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
+      <p class="text-center text-xs text-slate-500 dark:text-slate-400">
+        Já possui uma conta?
+        <a routerLink="/login" class="font-bold no-underline hover:underline text-orange-600 dark:text-orange-400">
+          Fazer login
+        </a>
+      </p>
+    </div>
+  </div>
+
+</div>
