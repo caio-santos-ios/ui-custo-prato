@@ -8,6 +8,7 @@ import { GlobalService } from '../../services/global.service';
 import { api } from '../../services/api';
 import { ResetPagination, TPagination } from '../../types/pagination.type';
 import { NgxCurrencyDirective } from 'ngx-currency';
+import { GenericTableModal } from '../../components/generic-table/generic-table';
 
 export interface IngredientOption {
   id: string;
@@ -24,7 +25,7 @@ export interface IngredientOption {
 @Component({
   selector: 'app-recipes',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, Loading, NgxCurrencyDirective],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, Loading, NgxCurrencyDirective, GenericTableModal],
   templateUrl: './recipes.html',
   styleUrl: './recipes.css'
 })
@@ -38,10 +39,12 @@ export class Recipes implements OnInit {
   search: string = '';
   categoryFilter: string = 'all';
   statusFilter: string = 'all';
-  categories: string[] = [];
+  categories: any[] = [];
   visiblePages: number[] = [];
 
   modal = false;
+  genericTableModal = false;
+  genericTable: string = 'category-receita';
   deleteModal = false;
   activeTab: 'basic' | 'ingredients' | 'costs' | 'pricing' | 'radiox' = 'basic';
 
@@ -132,13 +135,29 @@ export class Recipes implements OnInit {
 
   async loadCategories() {
     try {
-      const { data } = await api.get('/api/recipes/categories');
+      const { data } = await api.get('/api/generic-tables/select?deleted=false&table=category-receita');
       if (data?.data) {
         this.categories = data.data;
       }
     } catch {
       // ignore
     }
+  }
+
+  openModalGenericTable(table: string = 'category-receita') {
+    this.genericTable = table;
+    this.genericTableModal = true;
+  }
+
+  closeGenericTableModal() {
+    this.genericTableModal = false;
+  }
+
+  onCategoryCreated(newCategory: any) {
+    if (newCategory?.name) {
+      this.form.patchValue({ category: newCategory.name });
+    }
+    this.loadCategories();
   }
 
   async loadData(page: number = 1) {
@@ -191,14 +210,15 @@ export class Recipes implements OnInit {
   }
 
   // --- Form Arrays Management ---
-  createItem(ingredientId = '', quantity = 100, unit = 'g'): FormGroup {
-    // If ingredient selected, default unit to compatible unit
+  createItem(ingredientId = '', quantity = 100, unit = ''): FormGroup {
     const ing = this.ingredientsMap.get(ingredientId);
-    const defUnit = ing ? (ing.purchaseUnit === 'kg' ? 'g' : ing.purchaseUnit === 'L' ? 'ml' : ing.purchaseUnit) : unit;
+    // Se a unidade veio preenchida (ex: abrindo receita para editar), respeita a unidade salva!
+    // Se estiver vazia (novo item adicionado), sugere a unidade apropriada
+    const chosenUnit = unit || (ing ? (ing.purchaseUnit === 'kg' ? 'g' : ing.purchaseUnit === 'L' ? 'ml' : ing.purchaseUnit) : 'g');
     return this.fb.group({
       ingredientId: [ingredientId, [Validators.required]],
       quantity: [quantity, [Validators.required, Validators.min(0.0001)]],
-      unit: [defUnit, [Validators.required]]
+      unit: [chosenUnit, [Validators.required]]
     });
   }
 
@@ -225,6 +245,15 @@ export class Recipes implements OnInit {
       const suggestedUnit = ing.purchaseUnit === 'kg' ? 'g' : (ing.purchaseUnit === 'L' ? 'ml' : ing.purchaseUnit);
       group.patchValue({ unit: suggestedUnit });
     }
+  }
+
+  getCompatibleUnits(ingredientId: string): string[] {
+    const ing = this.ingredientsMap.get(ingredientId);
+    if (!ing) return this.units;
+    if (ing.purchaseUnit === 'kg' || ing.purchaseUnit === 'g') return ['g', 'kg'];
+    if (ing.purchaseUnit === 'L' || ing.purchaseUnit === 'ml') return ['ml', 'L'];
+    if (ing.purchaseUnit === 'un') return ['un'];
+    return this.units;
   }
 
   createOtherCost(name = '', value = 0, appliesTo = 'recipe'): FormGroup {

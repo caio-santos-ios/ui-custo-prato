@@ -388,4 +388,15 @@ export class Ingredients implements OnInit {
     this.genericTableModal = true;
     this.genericTable = table;
   }
+
+  closeGenericTableModal() {
+    this.genericTableModal = false;
+  }
+
+  onCategoryCreated(newCategory: any) {
+    if (newCategory?.name) {
+      this.form.patchValue({ category: newCategory.name });
+    }
+    this.loadCategories();
+  }
 }
